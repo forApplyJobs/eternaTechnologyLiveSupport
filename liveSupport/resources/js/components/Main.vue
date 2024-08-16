@@ -2,14 +2,16 @@
 
 <template>
   <div class="chat-app">
-    <Conversation :contact="selectedContact" :messages="messages" @new="saveNewMessage"/>
-    <ContactsList :contacts="contacts" @selected="startConversationWith" />
+    <!-- <Conversation :contact="selectedContact" :messages="messages" @new="saveNewMessage"/>
+    <ContactsList :contacts="contacts" @selected="startConversationWith" /> -->
+    <VideoCall :user="this.user"></VideoCall>
   </div>
 </template>
 
 <script>
 import Conversation from './Conversation.vue';
 import ContactsList from './ContactsList.vue';
+import VideoCall from './VideoCall.vue';
   export default {
     props:{
       user:{
@@ -56,7 +58,7 @@ import ContactsList from './ContactsList.vue';
         alert(message.text);
       }
     },
-    components:{Conversation,ContactsList}
+    components:{Conversation,ContactsList,VideoCall}
 
       
     }
