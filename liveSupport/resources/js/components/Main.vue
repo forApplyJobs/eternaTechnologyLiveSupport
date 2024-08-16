@@ -1,11 +1,12 @@
 
 
 <template>
-  <div class="chat-app">
-    <!-- <Conversation :contact="selectedContact" :messages="messages" @new="saveNewMessage"/>
-    <ContactsList :contacts="contacts" @selected="startConversationWith" /> -->
-    <VideoCall :user="this.user"></VideoCall>
+  <div class="chat-app" v-show="isChatActive">
+    <Conversation @callContact="callContactReq" :contact="selectedContact" :messages="messages" @new="saveNewMessage"/>
+    <ContactsList :contacts="contacts" @selected="startConversationWith" />
+    
   </div>
+  <VideoCall @peersConnected="changeVisibility" :user="this.user"></VideoCall>
 </template>
 
 <script>
@@ -23,7 +24,8 @@ import VideoCall from './VideoCall.vue';
       return{
         selectedContact:null,
         messages:[],
-        contacts:[]
+        contacts:[],
+        isChatActive:true
       };
     },
     mounted() {
@@ -56,6 +58,16 @@ import VideoCall from './VideoCall.vue';
           this.saveNewMessage(message);
         }
         alert(message.text);
+      },
+      async callContactReq(obj){
+        await axios.post('/send-call-request', {
+          call_from: this.user.id,
+          receiver_id: obj.receiverId,
+          status: 'call_sent' 
+        });
+      },
+      changeVisibility(){
+        this.isChatActive=false;
       }
     },
     components:{Conversation,ContactsList,VideoCall}

@@ -1,5 +1,7 @@
 <template>
     <div class="conversation">
+        <button @click="callContact">Call</button>
+        <button v-show="aNewCallReceived" @click="answerCall"></button>
         <h1>{{ contact? contact.name :'Select a Contact' }}</h1>
         <MessagesFeed :contact="contact" :messages="messages"></MessagesFeed>
         <MessageComposer @send="sendMessage"/>
@@ -19,6 +21,10 @@ export default{
         messages:{
             type:Array,
             default:[]
+        },
+        aNewCallReceived:{
+            type:Boolean,
+            default:false
         }
     },
     methods:{
@@ -35,6 +41,11 @@ export default{
             }).then((response) => {
                 this.$emit('new', response.data);
             });
+        },
+        callContact(){
+            this.$emit('callContact',{
+                receiverId:this.contact.id
+            })
         }
     },
     components:{MessagesFeed,MessageComposer}

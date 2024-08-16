@@ -1,12 +1,12 @@
 <template>
-  <div class="container">
+  <div v-show="connectionEstablished" class="container">
     <div class="row mb-3 mt-3 justify-content-md-center">
       <div>{{ userName }}</div>
-      <input v-model="receiverId" type="number" placeholder="Enter Receiver ID" class="form-control col-2 mb-2" />
-      <button @click="callRequest('call_sent')" class="btn btn-primary col-1">Call!</button>
+      <!-- <input v-model="receiverId" type="number" placeholder="Enter Receiver ID" class="form-control col-2 mb-2" /> -->
+      <!-- <button @click="callRequest('call_sent')" class="btn btn-primary col-1">Call!</button>
       <button @click="hangup" class="col-1 btn btn-primary">Hangup</button>
-      <div id="answer" class="col"></div>
-      <button v-if="this.aNewCallReceived" @click="answerCall" class="col-1 btn btn-primary">Answer call from{{ this.receiverId }}</button>
+      <div id="answer" class="col"></div> -->
+      <!-- <button v-if="this.aNewCallReceived" @click="answerCall" class="col-1 btn btn-primary">Answer call from{{ this.receiverId }}</button> -->
     </div>
     <div id="videos">
       <div id="video-wrapper">
@@ -28,13 +28,15 @@ export default {
     user:{
       type:Object,
       required:true
-    }
+    },
   },
   data() {
     return {
       userName: `Rob-${Math.floor(Math.random() * 100000)}`,
       sentCall:false,
+      receiverId:null,
       localStream: null,
+      connectionEstablished:false,
       remoteStream: null,
       aNewCallReceived:false,
       peerConnection: null,
@@ -77,7 +79,14 @@ export default {
         if(e.call.status=='call_sent'){
           this.receiverId=e.call['call_from'];
           this.aNewCallReceived=true;
+          if (confirm(`You have a call from ${this.receiverId} do you want to answer?`)) {
+            console.log("answered")
+            this.callRequest('call_answered');
+          } else {
+            return;
+          }
         }else if(e.call['status']=='call_answered'){
+          this.receiverId=e.call['call_from'];
           this.call();
         }
       })
@@ -174,6 +183,11 @@ export default {
       });
       this.peerConnection.addEventListener('connectionstatechange', () => {
         console.log('Connection State:', this.peerConnection.connectionState);
+        if(this.peerConnection.connectionState=='connected'){
+          this.connectionEstablished=true;
+          this.$emit('peersConnected')
+        }
+
       });
       if (offerObj) {
         await this.peerConnection.setRemoteDescription(offerObj.offer);
