@@ -1,8 +1,13 @@
 <template>
-    <div class="composer">
-        <textarea v-model="message" @keydown.enter="send" placeholder="Message.."></textarea>
+    <div class="composer p-4">
+      <textarea
+        v-model="message"
+        @keydown.enter="send"
+        placeholder="Message.."
+        class="w-full h-24 p-3 border border-gray-300 rounded-lg resize-none focus:border-blue-500 focus:outline-none"
+      ></textarea>
     </div>
-</template>
+  </template>
 <script>
 export default{
     data(){

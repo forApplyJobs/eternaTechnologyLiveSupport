@@ -7,7 +7,8 @@
     
   </div>
   <VideoCall @aNewCallReceived="showCallDialog" @peersConnected="changeVisibility" @video_call_ended="changeVisibility" :user="this.user"></VideoCall>
-  <NewCallDialog v-if="callReceived" :caller="callObj.call_from" @click="handleReceivedCall"></NewCallDialog>
+  <NewCallDialog v-if="callReceived" :caller="callObj.call_from" @call_accepted="handleReceivedCall" @call_declined="hidCallDialog"></NewCallDialog>
+  <NewMessageDialog @click="closeNewMessage" :messageFrom="messageObj.messageFrom" :message="messageObj.text" v-if="messageReceived"></NewMessageDialog>
 </template>
 
 <script>
@@ -15,6 +16,7 @@ import Conversation from './Conversation.vue';
 import ContactsList from './ContactsList.vue';
 import VideoCall from './VideoCall.vue';
 import NewCallDialog from './NewCallDialog.vue';
+import NewMessageDialog from './newMessageDialog.vue';
   export default {
     props:{
       user:{
@@ -29,7 +31,9 @@ import NewCallDialog from './NewCallDialog.vue';
         contacts:[],
         isChatActive:true,
         callReceived:false,
-        callObj:null
+        callObj:null,
+        messageReceived:false,
+        messageObj:null
       };
     },
     mounted() {
@@ -39,11 +43,10 @@ import NewCallDialog from './NewCallDialog.vue';
                     console.log("it is working");
                     this.handleIncoming(e.message);
                 });
-
         axios.get('/contacts').then((response)=>{
           console.log(response.data)
           this.contacts= response.data;
-          
+          console.log(this.contacts)
         });
     },
     methods:{
@@ -57,11 +60,15 @@ import NewCallDialog from './NewCallDialog.vue';
       saveNewMessage(obj){
         this.messages.push(obj);
       },
-      handleIncoming(message){
-        if(this.selectedContact&& message.messageFrom==this.selectedContact.id){
-          this.saveNewMessage(message);
+      handleIncoming(messageObj){
+        if(this.selectedContact&& messageObj.messageFrom==this.selectedContact.id){
+          this.saveNewMessage(messageObj);
+        }else{
+          console.log(this.contacts[messageObj.messageFrom])
+          console.log(messageObj)
+          this.messageObj=messageObj;
+          this.messageReceived=true;
         }
-        alert(message.text);
       },
       async callContactReq(obj){
         await axios.post('/send-call-request', {
@@ -78,14 +85,24 @@ import NewCallDialog from './NewCallDialog.vue';
         this.callReceived=true;
         this.callObj=obj
       },
+      hidCallDialog(){
+        console.log("hidsene oglimm")
+        this.callReceived=false;
+      },
       async handleReceivedCall(){
         console.log(this.callObj);
         await axios.post('/send-call-request',this.callObj);
         this.callReceived=false;
+      },
+      closeNewMessage(){
+        this.messageReceived=false;
+        this.messageObj=null;
+        
       }
     },
-    components:{Conversation,ContactsList,VideoCall,NewCallDialog}
-
+    components:{Conversation,ContactsList,VideoCall,NewCallDialog,NewMessageDialog},
+    
+    
       
     }
   

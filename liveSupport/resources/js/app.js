@@ -1,6 +1,6 @@
 import "./bootstrap";
-import { createApp } from "vue";
 
+import { createApp } from "vue";
 const app = createApp({});
 import Main from "./components/Main.vue"
 

@@ -1,22 +1,37 @@
 <template>
-    <div class="contacts-list">
-        <ul>
-            <li v-for="(contact,index) in contacts" :key="contact.id" @click="selectContact(index,contact)" :class="{'selected':index==selected}">
-                <div class="avatar">
-                    <!-- <img src="" alt="contact.name"> -->
-                    <div class="contact">
-                        <p class="name">
-                            {{ contact.name }}
-                        </p>
-                        <p class="email">
-                            {{ contact.email }}
-                        </p>
-                    </div>
-                </div>
-            </li>
-        </ul>
+    <div class="contacts-list h-[32rem] overflow-y-scroll border-l border-gray-300">
+      <ul class="list-none p-0 m-0">
+        <li
+          v-for="(contact, index) in contacts"
+          :key="contact.id"
+          @click="selectContact(index, contact)"
+          :class="[
+            'flex items-center p-2 cursor-pointer border-b border-gray-300 hover:bg-gray-100',
+            index === selected ? 'bg-gray-200' : ''
+          ]"
+        >
+          <div class="avatar flex-shrink-0">
+            <img
+              v-if="contact.avatar"
+              :src="contact.avatar"
+              alt="contact.name"
+              class="w-10 h-10 rounded-full object-cover"
+            />
+          </div>
+          <div class="contact flex-1 ml-3 text-sm">
+            <p class="name font-semibold">{{ contact.name }}</p>
+            <p class="email text-gray-500">{{ contact.email }}</p>
+          </div>
+          <span
+            v-if="contact.unread"
+            class="unread bg-green-400 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+          >
+            {{ contact.unread }}
+          </span>
+        </li>
+      </ul>
     </div>
-</template>
+  </template>
 
 <script>
 export default{
@@ -40,76 +55,9 @@ export default{
     }
 }
 </script>
-<style lang="scss" scoped>
+<style scoped>
 .contacts-list {
-    flex: 2;
-    max-height: 100%;
-    height: 600px;
-    overflow: scroll;
-    border-left: 1px solid #a6a6a6;
-    
-    ul {
-        list-style-type: none;
-        padding-left: 0;
-
-        li {
-            display: flex;
-            padding: 2px;
-            border-bottom: 1px solid #aaaaaa;
-            height: 80px;
-            position: relative;
-            cursor: pointer;
-
-            &.selected {
-                background: #dfdfdf;
-            }
-
-            span.unread {
-                background: #82e0a8;
-                color: #fff;
-                position: absolute;
-                right: 11px;
-                top: 20px;
-                display: flex;
-                font-weight: 700;
-                min-width: 20px;
-                justify-content: center;
-                align-items: center;
-                line-height: 20px;
-                font-size: 12px;
-                padding: 0 4px;
-                border-radius: 3px;
-            }
-
-            .avatar {
-                flex: 1;
-                display: flex;
-                align-items: center;
-
-                img {
-                    width: 35px;
-                    border-radius: 50%;
-                    margin: 0 auto;
-                }
-            }
-
-            .contact {
-                flex: 3;
-                font-size: 10px;
-                overflow: hidden;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-
-                p {
-                    margin: 0;
-
-                    &.name {
-                        font-weight: bold;
-                    }
-                }
-            }
-        }
-    }
+  flex: 2;
+  max-height: 100%;
 }
 </style>
