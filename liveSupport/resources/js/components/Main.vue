@@ -6,13 +6,15 @@
     <ContactsList :contacts="contacts" @selected="startConversationWith" />
     
   </div>
-  <VideoCall @peersConnected="changeVisibility" :user="this.user"></VideoCall>
+  <VideoCall @aNewCallReceived="showCallDialog" @peersConnected="changeVisibility" @video_call_ended="changeVisibility" :user="this.user"></VideoCall>
+  <NewCallDialog v-if="callReceived" :caller="callObj.call_from" @click="handleReceivedCall"></NewCallDialog>
 </template>
 
 <script>
 import Conversation from './Conversation.vue';
 import ContactsList from './ContactsList.vue';
 import VideoCall from './VideoCall.vue';
+import NewCallDialog from './NewCallDialog.vue';
   export default {
     props:{
       user:{
@@ -25,7 +27,9 @@ import VideoCall from './VideoCall.vue';
         selectedContact:null,
         messages:[],
         contacts:[],
-        isChatActive:true
+        isChatActive:true,
+        callReceived:false,
+        callObj:null
       };
     },
     mounted() {
@@ -67,10 +71,20 @@ import VideoCall from './VideoCall.vue';
         });
       },
       changeVisibility(){
-        this.isChatActive=false;
+        console.log("working")
+        this.isChatActive=!this.isChatActive;
+      },
+      showCallDialog(obj){
+        this.callReceived=true;
+        this.callObj=obj
+      },
+      async handleReceivedCall(){
+        console.log(this.callObj);
+        await axios.post('/send-call-request',this.callObj);
+        this.callReceived=false;
       }
     },
-    components:{Conversation,ContactsList,VideoCall}
+    components:{Conversation,ContactsList,VideoCall,NewCallDialog}
 
       
     }

@@ -1,6 +1,6 @@
 <template>
     <div class="conversation">
-        <button @click="callContact">Call</button>
+        <button v-show="contact" @click="callContact">Call</button>
         <button v-show="aNewCallReceived" @click="answerCall"></button>
         <h1>{{ contact? contact.name :'Select a Contact' }}</h1>
         <MessagesFeed :contact="contact" :messages="messages"></MessagesFeed>

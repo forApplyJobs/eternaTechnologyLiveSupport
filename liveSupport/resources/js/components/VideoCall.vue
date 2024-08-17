@@ -1,37 +1,27 @@
 <template>
-  <div v-show="connectionEstablished" class="container">
-    <div class="row mb-3 mt-3 justify-content-md-center">
-      <div>{{ userName }}</div>
-      <!-- <input v-model="receiverId" type="number" placeholder="Enter Receiver ID" class="form-control col-2 mb-2" /> -->
-      <!-- <button @click="callRequest('call_sent')" class="btn btn-primary col-1">Call!</button>
-      <button @click="hangup" class="col-1 btn btn-primary">Hangup</button>
-      <div id="answer" class="col"></div> -->
-      <!-- <button v-if="this.aNewCallReceived" @click="answerCall" class="col-1 btn btn-primary">Answer call from{{ this.receiverId }}</button> -->
-    </div>
+  <div v-show="connectionEstablished" class="video-call-container">
     <div id="videos">
       <div id="video-wrapper">
         <div v-if="waitingForAnswer" class="btn btn-warning">Waiting for answer...</div>
-        <video ref="localVideo" class="video-player" autoplay playsinline muted controls></video>
+        <!-- Küçük video (Local Video) -->
+        <video ref="localVideo" class="video-player small-video" autoplay playsinline muted controls></video>
+        <!-- Görüşmeyi kapatma butonu -->
+        <button @click="hangup" class="end-call-button">
+          📞
+        </button>
       </div>
-      <video ref="remoteVideo" class="video-player" autoplay playsinline muted controls></video>
-      <audio ref="callAudio" class="call-audio" controls></audio>
+      <!-- Büyük video (Remote Video) -->
+      <video ref="remoteVideo" class="video-player large-video" autoplay playsinline controls></video>
+      <!-- Ses çalma elementi (görünmez) -->
+      <audio ref="callAudio" class="call-audio"></audio>
     </div>
   </div>
 </template>
 
-
 <script>
 import axios from 'axios';
-
-export default {
-  props:{
-    user:{
-      type:Object,
-      required:true
-    },
-  },
-  data() {
-    return {
+function initialState (){
+  return {
       userName: `Rob-${Math.floor(Math.random() * 100000)}`,
       sentCall:false,
       receiverId:null,
@@ -53,7 +43,17 @@ export default {
         ],
       },
     };
+}
+export default {
+  props:{
+    user:{
+      type:Object,
+      required:true
+    },
   },
+  data: function (){
+    return initialState();
+  }, 
   mounted() {
     this.initializeListeners();
   },
@@ -79,12 +79,12 @@ export default {
         if(e.call.status=='call_sent'){
           this.receiverId=e.call['call_from'];
           this.aNewCallReceived=true;
-          if (confirm(`You have a call from ${this.receiverId} do you want to answer?`)) {
-            console.log("answered")
-            this.callRequest('call_answered');
-          } else {
-            return;
-          }
+          this.$emit('aNewCallReceived',{
+          call_from: this.user.id,
+          receiver_id: this.receiverId,
+          status: 'call_answered' 
+          })
+
         }else if(e.call['status']=='call_answered'){
           this.receiverId=e.call['call_from'];
           this.call();
@@ -116,24 +116,24 @@ export default {
       }
     },
     async answerOffer(offerObj) {
-  try {
-    await this.fetchUserMedia();
-    offerObj.offer.sdp+="\r\n";
-    await this.createPeerConnection(offerObj);
-    await this.peerConnection.setRemoteDescription(offerObj.offer);
-    const answer = await this.peerConnection.createAnswer();
-    await this.peerConnection.setLocalDescription(answer);
-    await axios.post('/send-answer', {
-      answer: {
-        ...answer,
-        senderId: this.user.id 
-      },
-      receiver_id: this.receiverId  
-    });
-  } catch (error) {
-    console.error("Error in answerOffer: ", error);
-  }
-},
+      try {
+        await this.fetchUserMedia();
+        offerObj.offer.sdp+="\r\n";
+        await this.createPeerConnection(offerObj);
+        await this.peerConnection.setRemoteDescription(offerObj.offer);
+        const answer = await this.peerConnection.createAnswer();
+        await this.peerConnection.setLocalDescription(answer);
+        await axios.post('/send-answer', {
+          answer: {
+            ...answer,
+            senderId: this.user.id 
+          },
+          receiver_id: this.receiverId  
+        });
+      } catch (error) {
+        console.error("Error in answerOffer: ", error);
+      }
+    },
     async addAnswer(offerObj) {
       offerObj.answer.sdp+="\r\n"
       await this.peerConnection.setRemoteDescription(offerObj.answer);
@@ -186,6 +186,11 @@ export default {
         if(this.peerConnection.connectionState=='connected'){
           this.connectionEstablished=true;
           this.$emit('peersConnected')
+        }else if(this.peerConnection.connectionState=='disconnected'){
+          this.stopBothVideoAndAudio(this.$refs.localVideo.srcObject)
+          this.resetWindow();
+          this.$emit('video_call_ended')
+
         }
 
       });
@@ -194,22 +199,109 @@ export default {
       }
     },
     addNewIceCandidate(iceCandidate) {
-      this.peerConnection.addIceCandidate(iceCandidate.iceCandidate);
+      if(this.peerConnection.connectionState!=closed){
+        this.peerConnection.addIceCandidate(iceCandidate.iceCandidate);
+      }
     },
     handleIncomingMessage(message) {
       console.log("Incoming message: ", message);
     },
     answerCall(){
       this.callRequest('call_answered');
+    },
+    async hangup(){
+      this.peerConnection.close();
+      this.peerConnection=null;
+      this.stopBothVideoAndAudio(this.$refs.localVideo.srcObject)
+      this.resetWindow();
+      this.$emit('video_call_ended')
+    },
+    stopBothVideoAndAudio(stream) {
+    stream.getTracks().forEach((track) => {
+        if (track.readyState == 'live') {
+            track.stop();
+        }
+      });
+    },
+    resetWindow(){
+        Object.assign(this.$data, initialState());
     }
   },
+  
+
 };
 </script>
 
 <style scoped>
+.video-call-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#videos {
+  position: relative;
+  width: 80%;
+  max-width: 1200px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  background-color: black;
+}
+
 .video-player {
   width: 100%;
   height: auto;
+  border-radius: 4px;
   background-color: black;
+}
+
+.large-video {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.small-video {
+  position: absolute;
+  width: 25%;
+  bottom: 20px;
+  right: 20px;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  background-color: black;
+}
+
+/* Görüşmeyi kapatma butonu */
+.end-call-button {
+  position: absolute;
+  bottom: 25px;
+  right: 30%;
+  width: 45px;
+  height: 45px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.end-call-button:hover {
+  background-color: darkred;
+}
+
+.call-audio {
+  display: none;
 }
 </style>
