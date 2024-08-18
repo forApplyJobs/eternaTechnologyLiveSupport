@@ -278,7 +278,7 @@ export default {
   background-color: black;
 }
 
-/* Görüşmeyi kapatma butonu */
+
 .end-call-button {
   position: absolute;
   bottom: 25px;
